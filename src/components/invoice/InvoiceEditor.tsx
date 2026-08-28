@@ -51,10 +51,10 @@ export function InvoiceEditor() {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="container mx-auto px-4 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px_300px] gap-6 items-start">
-          {/* COLUMN 1: LEFT / CENTER CANVAS - Main Invoice Editor */}
-          <div className="lg:col-span-1">
+      <div className="max-w-[1440px] mx-auto px-4 py-6">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+          {/* COLUMN 1: LEFT / CENTER CANVAS - Main Invoice Editor (Takes 6 of 12 cols on large screen) */}
+          <div className="lg:col-span-6 xl:col-span-7">
             <div className="bg-card rounded-xl border border-border shadow-sm overflow-hidden">
               <div className="p-6 space-y-6">
                 <div className="flex items-start justify-between gap-4">
@@ -151,9 +151,9 @@ export function InvoiceEditor() {
             </div>
           </div>
 
-          {/* COLUMN 2: SUBTOTAL / TAX / DISCOUNTS / BALANCE DUE */}
-          <aside className="hidden lg:block lg:col-span-1">
-            <div className="sticky top-24">
+          {/* COLUMN 2: SUBTOTAL / TAX / DISCOUNTS / SETTINGS PANEL */}
+          <aside className="hidden lg:block lg:col-span-3 xl:col-span-3 space-y-4">
+            <div className="sticky top-6 space-y-4">
               <TotalsSection
                 totals={totals}
                 taxRate={state.taxRate}
@@ -166,30 +166,21 @@ export function InvoiceEditor() {
                 onShippingChange={(v) => updateField("shipping", parseFloat(v) || 0)}
                 onAmountPaidChange={(v) => updateField("amountPaid", parseFloat(v) || 0)}
               />
+
+              <div className="bg-card rounded-xl border border-border shadow-sm p-6">
+                <SettingsPanel onDownloadPdf={handleDownloadPdf} />
+              </div>
             </div>
           </aside>
 
-          {/* COLUMN 3: SETTINGS CONTAINER + AD CONTAINER UNDERNEATH */}
-          <aside className="hidden lg:block lg:col-span-1">
-            <div className="sticky top-24 space-y-4">
-              <div className="bg-card rounded-xl border border-border shadow-sm p-6">
-                <SettingsPanel
-                  accentColor="emerald"
-                  template="classic"
-                  onAccentChange={() => {}}
-                  onTemplateChange={() => {}}
-                  onDownloadPdf={handleDownloadPdf}
-                />
-              </div>
-              
-              {/* Right Ad Banner under settings */}
-              <RightAdBanner slotId="1234567890" />
-            </div>
+          {/* COLUMN 3: RIGHT AD SIDEBAR (Fixed 300px width slot) */}
+          <aside className="hidden xl:block xl:col-span-2 w-[300px] shrink-0 sticky top-6 self-start">
+            <RightAdBanner slotId="1234567890" delayMs={3000} />
           </aside>
         </div>
 
-        {/* BOTTOM AD BANNER - Fixed floating bottom bar with close/collapse */}
-        <BottomAdBanner slotId="0987654321" />
+        {/* BOTTOM AD BANNER */}
+        <BottomAdBanner slotId="0987654321" delayMs={3000} />
       </div>
 
       {showPdfModal && (

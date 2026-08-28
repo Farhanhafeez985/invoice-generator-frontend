@@ -4,7 +4,6 @@ import { useState, useEffect, useRef } from 'react';
 import { Minimize2, Maximize2, X, ChevronUp } from 'lucide-react';
 import { cn } from "@/lib/utils";
 
-// Add global TypeScript declaration for window.adsbygoogle
 declare global {
   interface Window {
     adsbygoogle: unknown[];
@@ -13,13 +12,20 @@ declare global {
 
 interface BottomAdBannerProps {
   slotId: string;
-  format?: 'auto' | 'fluid' | 'rectangle';
+  format?: 'auto' | 'fluid' | 'rectangle' | 'horizontal';
   className?: string;
+  delayMs?: number;
 }
 
-export function BottomAdBanner({ slotId, format = 'fluid', className = '' }: BottomAdBannerProps) {
+export function BottomAdBanner({
+  slotId,
+  format = 'horizontal',
+  className = '',
+  delayMs = 3000
+}: BottomAdBannerProps) {
   const [isMinimized, setIsMinimized] = useState(false);
   const [isClosed, setIsClosed] = useState(false);
+  const [isLoaded, setIsLoaded] = useState(false); // Track delay state
   const adContainerRef = useRef<HTMLDivElement>(null);
   const insRef = useRef<HTMLModElement>(null);
   const initializedRef = useRef(false);
@@ -30,7 +36,6 @@ export function BottomAdBanner({ slotId, format = 'fluid', className = '' }: Bot
     const ins = insRef.current;
     if (!ins) return;
 
-    // Prevent pushing if AdSense already initialized this tag
     const hasAd = ins.querySelector('iframe') || ins.hasAttribute('data-adsbygoogle-status');
     if (hasAd) return;
 
@@ -43,40 +48,49 @@ export function BottomAdBanner({ slotId, format = 'fluid', className = '' }: Bot
   };
 
   useEffect(() => {
-    if (!isMinimized && !isClosed) {
-      pushAd();
-    }
-  }, [isMinimized, isClosed, slotId]);
+    if (isMinimized || isClosed) return;
+
+    const timer = setTimeout(() => {
+      setIsLoaded(true); // Reveal container after delay
+
+      // Allow DOM update before pushing ad
+      setTimeout(() => {
+        pushAd();
+      }, 50);
+    }, delayMs);
+
+    return () => clearTimeout(timer);
+  }, [isMinimized, isClosed, slotId, delayMs]);
 
   const toggleMinimize = () => {
     setIsMinimized(prev => {
       const next = !prev;
       if (!next) {
-        // Trigger push after component mounts back into DOM
         setTimeout(() => pushAd(), 100);
       }
       return next;
     });
   };
 
-  if (isClosed) return null;
+  // If closed or still waiting for the initial delay timer, render nothing
+  if (isClosed || !isLoaded) return null;
 
   return (
     <>
       {!isMinimized && (
-        <div className={cn("fixed bottom-0 left-0 right-0 z-40 pointer-events-none", className)}>
-          <div className="max-w-7xl mx-auto px-4 pb-4 pointer-events-auto">
+        <div className={cn("fixed bottom-2 left-0 right-0 z-40 flex justify-center pointer-events-none px-4", className)}>
+          <div className="w-full max-w-[728px] pointer-events-auto">
             <div className="bg-card rounded-xl border border-border shadow-lg overflow-hidden">
-              <div className="flex items-center justify-between px-4 py-3 border-b border-border bg-muted/50">
-                <span className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Sponsored</span>
-                <div className="flex items-center gap-2">
+              <div className="flex items-center justify-between px-3 py-1 border-b border-border bg-muted/50 h-7">
+                <span className="text-[10px] font-medium text-muted-foreground uppercase tracking-wider">Sponsored</span>
+                <div className="flex items-center gap-1">
                   <button
                     onClick={toggleMinimize}
                     className="p-1 rounded hover:bg-muted transition-colors text-muted-foreground hover:text-foreground"
                     aria-label="Minimize ad"
                     title="Minimize"
                   >
-                    <Minimize2 className="h-4 w-4" />
+                    <Minimize2 className="h-3 w-3" />
                   </button>
                   <button
                     onClick={() => setIsClosed(true)}
@@ -84,23 +98,22 @@ export function BottomAdBanner({ slotId, format = 'fluid', className = '' }: Bot
                     aria-label="Close ad"
                     title="Close"
                   >
-                    <X className="h-4 w-4" />
+                    <X className="h-3 w-3" />
                   </button>
                 </div>
               </div>
-              <div className="p-4 overflow-hidden">
+              <div className="p-2 overflow-hidden flex justify-center">
                 <div
                   ref={adContainerRef}
-                  className="ad-container w-full overflow-hidden rounded-md border border-dashed border-zinc-300 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 h-[90px] min-h-[90px]"
+                  className="ad-container w-[728px] h-[90px] min-h-[90px] overflow-hidden rounded-md border border-dashed border-zinc-300 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50"
                 >
                   <ins
                     ref={insRef}
                     className="adsbygoogle"
-                    style={{ display: 'block', width: '100%', height: '100%' }}
+                    style={{ display: 'inline-block', width: '728px', height: '90px' }}
                     data-ad-client={process.env.NEXT_PUBLIC_ADSENSE_CLIENT_ID || 'ca-pub-XXXXXXXXXXXXXXXX'}
                     data-ad-slot={slotId}
                     data-ad-format={format}
-                    data-full-width-responsive="true"
                   />
                 </div>
               </div>
